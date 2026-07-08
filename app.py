@@ -29,6 +29,16 @@ def load_data():
     return df
 
 
+def normalize_markdown(text):
+    """修复分析脚本生成报告时遗留的统一缩进，避免 Markdown 被识别为代码块。"""
+    normalized = []
+    for line in text.splitlines():
+        if line.startswith("        "):
+            line = line[8:]
+        normalized.append(line.replace("&nbsp;", " "))
+    return "\n".join(normalized)
+
+
 def main():
     df = load_data()
     st.title("京东多源数据融合分析看板")
@@ -102,7 +112,11 @@ def main():
         st.download_button("下载当前筛选结果", filtered.to_csv(index=False).encode("utf-8-sig"), "jd_filtered_data.csv", "text/csv")
 
     with tab4:
-        st.markdown(REPORT_PATH.read_text(encoding="utf-8") if REPORT_PATH.exists() else "分析报告文件未部署。")
+        if REPORT_PATH.exists():
+            st.caption("以下内容为全部 255 条融合样本的综合分析；顶部指标随侧栏筛选条件变化。")
+            st.markdown(normalize_markdown(REPORT_PATH.read_text(encoding="utf-8")))
+        else:
+            st.info("分析报告文件未部署。")
 
     st.divider()
     st.caption("北京服装学院人工智能与创新设计学院 · 多源数据融合与分析可视化实训")
